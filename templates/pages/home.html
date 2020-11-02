@@ -1,0 +1,159 @@
+{% extends 'base.html' %} 
+{% block content %} 
+
+<div class='row text-center'>
+<div class = 'col margin-top: .5rem'>
+<h2>Welcome to Humming!</h2> 
+</div>
+</div>
+
+<div class='row'>
+<div class='col-8 mx-auto'>
+<div class="d-none alert alert-danger" id="errorMsg" ></div>
+<form class='form' id='createForm' method='POST' action='/createHumms'>
+{% csrf_token %}
+<input type= 'hidden' value='/' name='next'/>
+<textarea required='required' class='form-control mb-2' placeholder="Your Humm" name='content' ></textarea>
+<button type= 'submit' class='btn btn-primary mb-4'>Humm</button>
+</form>
+
+</div>
+
+</div>
+<div class = 'row' id ='humms'>
+loading...
+</div>
+
+
+<script>
+
+function handleTooLongMessage(message, display){
+    var errorMsgEl = document.getElementById("errorMsg")
+    if(display=== true){
+        errorMsgEl.setAttribute("class", "d-block alert alert-danger")
+        errorMsgEl.innerText = message
+    } 
+    else{
+        errorMsgEl.setAttribute("class", "d-none alert alert-danger")
+    }
+}
+
+function handleCreateHummFormSubmit(event){
+    event.preventDefault() // this will stop default submit event
+    handleTooLongMessage(null, false)
+    const myForm = event.target
+    const myFormData = new FormData(myForm)
+    const endpoint = myForm.getAttribute("action")
+    const method = myForm.getAttribute("method")
+   
+    const xhr = new XMLHttpRequest()
+    xhr.responseType = "json"
+    xhr.open(method, endpoint)
+    xhr.setRequestHeader("HTTP_X_REQUESTED_WITH","XMLHttpRequest")
+    xhr.setRequestHeader("X-Requested-With","XMLHttpRequest")
+    
+    xhr.onload = function(){
+        if(xhr.status===201){
+            const newHumm = xhr.response
+            //console.log(xhr.status, ServerResponse)
+            console.log(newHumm)
+            const formattedNewHumm = formatHumm(newHumm)
+            console.log(formattedNewHumm)
+            const ogHtml =  hummEl.innerHTML
+            hummEl.innerHTML = formattedNewHumm + ogHtml
+        } else if(xhr.status===400){
+            const errorFound = xhr.response
+            console.log(errorFound)
+            //alert("An Error Occured." + errorFound.content[0])
+            if(errorFound)
+            handleTooLongMessage(errorFound.content[0], true)
+        } else if(xhr.status=== 500){
+            alert("There was a server error")
+        }
+         else if(xhr.status=== 401){
+            alert("You must login")
+            //console.log(xhr)
+            window.location.href = "/login"
+        }
+ 
+    }
+    xhr.send(myFormData)
+    myForm.reset()
+    xhr.onerror = function(){
+        alert("An Error Occured. Please Try again Later.")
+    }
+    }
+
+    
+  
+    {% comment %} for(var i of myFormData.entries()){
+    console.log(i)
+    } {% endcomment %}
+
+const createFormEl = document.getElementById("createForm")
+
+createFormEl.addEventListener("submit", handleCreateHummFormSubmit )
+
+
+const hummEl = document.getElementById("humms")// get hhtml element
+
+
+
+function loadHumms(hummElement){
+    const xhr = new XMLHttpRequest()
+    xhr.responseType = "json"
+    xhr.open('GET', "/humms")
+    xhr.onload = function() {
+        const ServerResponse = xhr.response
+        var listItems = ServerResponse
+        var hummstream=""
+        var i;
+        for (i=0; i<listItems.length;i++){
+        
+            var id = listItems[i].id
+            var content = listItems[i].content
+            currentItem = formatHumm(listItems[i])
+            hummstream += currentItem
+        }        
+        hummElement.innerHTML = hummstream
+        //console.log(id)// Hello, world!
+    }
+    xhr.send()
+
+}
+
+loadHumms(hummEl)
+
+
+
+{% comment %} 
+hummElement.innerHTML = 'Loading..' // set new html in that element
+
+var el1 = "<h1>Hi there 1</h1>"
+var el2 = "<h1>Hi there 2</h1>"
+var el3 = "<h1>Hi there 3</h1>"
+hummElement.innerHTML = el1+el2+el3 
+{% endcomment %}
+
+
+// the response is {"message": "Hello, world!"}
+function handleDidLike(id, likeCount_cur)
+{
+    console.log(id, likeCount_cur)
+    
+}
+
+function LikeBtn(humm)
+{
+    return "<button class = 'btn btn-primary'onclick= handleDidLike("+ humm.id + ","+ humm.like+")>"+ humm.like + " Like</button>"
+}
+
+function formatHumm (hummobj)
+{
+    var finalHummStream = "<div class='col-12 border rounded mb-4' id='tweet - "+hummobj.id+"'><p> "+ hummobj.content+"<div class = 'btn-group'>"+ LikeBtn(hummobj) + "</div></p></div>"
+    return finalHummStream
+}
+
+</script>
+{% endblock %}
+<title>{% block new %} Humming Bees {% endblock %}</title>
